@@ -6,156 +6,273 @@
         Purpose of the stylesheet follows.
 */
 
-/*Particle System Canvas*/
-#viewport
-{
-    display:inline;
-    float: left;
+/* Particle System Canvas*/
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+#container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 1200px;
+  height: 70vh;
+  min-height: 400px;
+  margin: 24px 0 0 0;
+  position: relative;
+  justify-content: flex-start;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+#viewport {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Side Panel */
+#sidePanel {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #f8f9fa;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08);
+  padding: 24px 0;
+  box-sizing: border-box;
+  z-index: 10;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#sidePanel.visible {
+  width: 340px;
+  min-width: 340px;
+  padding: 24px 18px;
+  overflow-y: auto;
+}
+
+#sidePanelToggle {
+  position: static;
+  align-self: stretch;
+  margin: 0;
+  background: #fff;
+  border: none;
+  border-radius: 0 20px 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 48px;
+  min-width: 48px;
+  height: 100%;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+#sidePanelToggle:hover {
+  background: #f0f0f0;
+}
+
+/* Courses Section */
+#courseButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.course-item {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 18px 18px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+
+.course-item:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.course-btn {
+  border: none;
+  background: #1976d2;
+  color: #fff;
+  font: 600 1.05em "Segoe UI", Arial, sans-serif;
+  border-radius: 999px;
+  padding: 10px 28px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.08);
+  transition: background 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+
+.course-btn.activeState {
+  background: #388e3c;
+}
+.course-btn.readyState {
+  background: #1976d2;
+}
+.course-btn.inactiveState {
+  background: #bdbdbd;
+  color: #fff;
+}
+
+.course-btn:hover:not(:disabled) {
+  background: #1565c0;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.13);
+}
+
+.course-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.prerequisites {
+  font-size: 0.93em;
+  color: #888da8;
+  margin-top: 2px;
+  margin-left: 2px;
+  font-style: italic;
+  letter-spacing: 0.1px;
 }
 
 /*Appearance of input button*/
-#courses input
-{
-    border: 1px solid #777777;
-    color: white;
-    font: bold 11px 'Trebuchet MS';
-    padding: 1px;
-    cursor: pointer;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px; 
+#courses input {
+  border: 1px solid #777777;
+  color: white;
+  font: bold 11px "Trebuchet MS";
+  padding: 1px;
+  cursor: pointer;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
 }
 
-#courses input:hover
-{
-    background: #6e9e2d;
+#courses input:hover {
+  background: #6e9e2d;
 }
 
 /*Style for all the undo buttons; The square brackets are used as an attribute selector,
 to select all elements that have a certain attribute value. In other words, they detect attribute presence.
 The "*" affects any input element whose name attribute value contains the string “Undo”.*/
-#courses img[id*='Undo']
-{
-    width: 16px; 
-    height: 16px;
-    background: url(../img/undo.jpg);
-    background-size: 16px 16px;
-    background-repeat: no-repeat;
+#courses img[id*="Undo"] {
+  width: 16px;
+  height: 16px;
+  background: url(../svg/undo.svg);
+  background-size: 16px 16px;
+  background-repeat: no-repeat;
 }
-
-/*#courses input[id*='Undo']:hover
-{
-    background: grey;
-}*/
 
 /*Possible States of course input button*/
-.activeState
-{
-    background: #6e9e2d;
+.activeState {
+  background: #6e9e2d;
 }
 
-.readyState
-{
-    background: #0000FF;
+.readyState {
+  background: #0000ff;
 }
 
-.inactiveState
-{
-    background: #585858;
-}
-
-/*Appearance of input button*/
-.prerequisites
-{
-    display:inline;
-    font: italic 11px 'Trebuchet MS';
-    color: orangered;
-
+.inactiveState {
+  background: #585858;
 }
 
 /*Side Panel Navigation Menu*/
-#sidePanelNav
-{
-    display: inline;
-    background: url(../img/bar.gif) center center repeat-x;
+#sidePanelNav {
+  display: inline;
+  background: url(../img/bar.gif) center center repeat-x;
 }
 
-#sidePanelNav a
-{
-    color: black;
-    text-decoration: none;
-    font: bolder 12px 'Trebuchet MS';
+#sidePanelNav a {
+  color: black;
+  text-decoration: none;
+  font: bolder 12px "Trebuchet MS";
 }
 
-#sidePanelNav a:hover
-{
-    color: red;
+#sidePanelNav a:hover {
+  color: red;
 }
 
-/*Legend for Graph*/
-#legend ul
-{  
-    list-style-type: none;
+/* Legend for Graph */
+#legend {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px 28px;
+  max-width: 260px;
+  margin: 32px auto 0 auto;
+  font-family: "Segoe UI", Arial, sans-serif;
 }
 
-#legend ul li
-{ 
-    float: left; 
-    margin-right: 25px;
+#legend h3 {
+  margin-top: 0;
+  font-size: 1.15em;
+  letter-spacing: 1px;
+  color: #333;
+  margin-bottom: 14px;
 }
 
-.bluebox 
-{ 
-    float: left; 
-    width: 20px; 
-    height: 20px; 
-    background-color: blue;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px; 
+#legend ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.greybox 
-{ 
-    float: left; 
-    width: 20px; 
-    height: 20px; 
-    background-color: grey;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px; 
+#legend li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 1em;
+  color: #444;
+  letter-spacing: 0.2px;
 }
 
-.greenbox
-{ 
-    float: left; 
-    width: 20px; 
-    height: 20px; 
-    background-color: green;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px; 
+.legend-box {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  margin-right: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  border: 1.5px solid #e0e0e0;
 }
 
-.redbox
-{ 
-    float: left; 
-    width: 20px; 
-    height: 20px; 
-    background-color: red;
-    -moz-border-radius: 4px;
-    -webkit-border-radius: 4px; 
+.legend-box.grey {
+  background: grey;
 }
-
-
-.undobox
-{ 
-    float: left; 
-    width: 20px; 
-    height: 20px;
-    background: url(../img/undo.jpg);
-    background-size: 20px 20px;
-    background-repeat: no-repeat;
+.legend-box.blue {
+  background: blue;
+}
+.legend-box.green {
+  background: green;
+}
+.legend-box.undo {
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.legend-box.undo img {
+  display: block;
 }
 
 /*Hide element from Page*/
-.hidden
-{
-    display: none;
+.hidden {
+  display: none;
 }

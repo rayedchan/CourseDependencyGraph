@@ -1,49 +1,96 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Course Dependency Graph </title>
-        <link rel='stylesheet' href='css/main_style.css' type='text/css' />
-        <script language="javascript" type="text/javascript" src="js/jquery.min.js"></script>
-        <script language="javascript" type="text/javascript" src="js/arbor.js"></script>
-        <script language="javascript" type="text/javascript" src="js/arbor-tween.js"></script>
-        <script language="javascript" type="text/javascript" src="js/renderer.js"></script>
-        <script language="javascript" type="text/javascript" src="js/graphics.js"></script>
-        <script language="javascript" type="text/javascript" src="js/courseDependencyGraph.js"></script>
-    </head>
-    
-    <body>
-        <div id="container">
-           <canvas id="viewport" width="800" height="600"></canvas>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Course Dependency Graph</title>
+    <link rel="stylesheet" href="css/main_style.css" type="text/css" />
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/jquery.min.js"
+      defer
+    ></script>
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/arbor.js"
+      defer
+    ></script>
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/arbor-tween.js"
+      defer
+    ></script>
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/renderer.js"
+      defer
+    ></script>
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/graphics.js"
+      defer
+    ></script>
+    <script
+      language="javascript"
+      type="text/javascript"
+      src="js/courseDependencyGraph.js"
+      defer
+    ></script>
+  </head>
 
-           <div id="sidePanel">
-               <div id="sidePanelNav">     
-                   <a id="clearGraph" href="#">Reset Graph</a> <b>|</b>
-                   <a id="displayEntireDependencyGraph" href="#">Display Course Dependency Graph</a>
-               </div>
-         
-               <select id="academicMajor">
-                   <option value="json/chemistry.json">Chemistry</option>
-                   <option selected="selected" value="json/computerscience.json">Computer Science</option>
-                   <option value="json/economics.json">Economics</option>
-                   <option value="json/mathematics.json">Mathematics</option>
-                   <option value="json/psychology.json">Psychology</option>
-               </select>
-                   
-               <form id="courses"> 
-                   <div id="courseButtons"></div>     
-               </form>
-           </div>
-        </div>
-        
-        <div id="legend">
-            <ul>
-                <li><span class="greybox"></span> - Unavailable</li>
-                <li><span class="bluebox"></span> - Ready to Take</li>
-                <li><span class="greenbox"></span> - Complete</li>
-                <li><span class="undobox"></span> - Able to Undo</li>
-            </ul>
-        </div>
-        
-    </body>
+  <body>
+    <h1>Course Dependency Graph</h1>
+    <div id="sidePanelNav">
+      <a id="clearGraph" href="#">Reset Graph</a> <b>|</b>
+      <a id="displayEntireDependencyGraph" href="#"
+        >Display Course Dependency Graph</a
+      >
+    </div>
+
+    <select id="academicMajor">
+      <option value="json/chemistry.json">Chemistry</option>
+      <option selected="selected" value="json/computerscience.json">
+        Computer Science
+      </option>
+      <option value="json/economics.json">Economics</option>
+      <option value="json/mathematics.json">Mathematics</option>
+      <option value="json/psychology.json">Psychology</option>
+    </select>
+
+    <div id="container">
+      <canvas id="viewport"></canvas>
+      <button id="sidePanelToggle" aria-label="Toggle Side Panel">
+        <img
+          src="svg/sidebar-right.svg"
+          alt="Right Sidebar"
+          width="25"
+          height="20"
+        />
+      </button>
+      <div id="sidePanel">
+        <form id="courses">
+          <div id="courseButtons"></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="legend">
+      <h3>Legend</h3>
+      <ul>
+        <li><span class="legend-box grey"></span>Unavailable</li>
+        <li><span class="legend-box blue"></span>Ready to Take</li>
+        <li><span class="legend-box green"></span>Complete</li>
+        <li>
+          <span class="legend-box undo">
+            <img src="svg/undo.svg" alt="Undo" width="18" height="18" />
+          </span>
+          Able to Undo
+        </li>
+      </ul>
+    </div>
+  </body>
 </html>
