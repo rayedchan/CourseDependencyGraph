@@ -43,23 +43,31 @@
   </head>
 
   <body>
-    <h1>Course Dependency Graph</h1>
-    <div id="sidePanelNav">
-      <a id="clearGraph" href="#">Reset Graph</a> <b>|</b>
-      <a id="displayEntireDependencyGraph" href="#"
-        >Display Course Dependency Graph</a
-      >
-    </div>
+    <!-- Modern single-row header -->
+    <header id="appHeader" role="banner">
+      <div class="brand">
+        <h1>Course Dependency Graph</h1>
+        <span class="brand-accent" aria-hidden="true">•</span>
+        <span class="brand-sub">interactive</span>
+      </div>
 
-    <select id="academicMajor">
-      <option value="json/chemistry.json">Chemistry</option>
-      <option selected="selected" value="json/computerscience.json">
-        Computer Science
-      </option>
-      <option value="json/economics.json">Economics</option>
-      <option value="json/mathematics.json">Mathematics</option>
-      <option value="json/psychology.json">Psychology</option>
-    </select>
+      <div class="controls" role="region" aria-label="Controls">
+        <label for="academicMajor" class="visually-hidden">Select Major</label>
+        <select id="academicMajor" class="control-select">
+          <option value="json/chemistry.json">Chemistry</option>
+          <option selected="selected" value="json/computerscience.json">
+            Computer Science
+          </option>
+          <option value="json/economics.json">Economics</option>
+          <option value="json/mathematics.json">Mathematics</option>
+          <option value="json/psychology.json">Psychology</option>
+        </select>
+        <a id="displayEntireDependencyGraph" href="#" class="control-btn"
+          >Display Full Graph</a
+        >
+        <a id="clearGraph" href="#" class="control-btn">Reset Graph</a>
+      </div>
+    </header>
 
     <div id="container">
       <canvas id="viewport"></canvas>
@@ -76,21 +84,128 @@
           <div id="courseButtons"></div>
         </form>
       </div>
+
+      <!-- Legend placed over bottom-left of the canvas (shows by default) -->
+      <aside
+        id="legend"
+        class="legend-visible"
+        aria-label="Legend"
+        aria-hidden="false"
+      >
+        <button
+          id="legendToggle"
+          class="legend-toggle"
+          aria-pressed="false"
+          title="Hide legend"
+        >
+          ✕
+        </button>
+        <h3>Legend</h3>
+        <ul>
+          <li>
+            <span class="legend-box grey" aria-hidden="true"></span>Unavailable
+          </li>
+          <li>
+            <span class="legend-box blue" aria-hidden="true"></span>Ready to
+            Take
+          </li>
+          <li>
+            <span class="legend-box green" aria-hidden="true"></span>Complete
+          </li>
+          <li>
+            <span class="legend-box undo" aria-hidden="true">
+              <img src="svg/undo.svg" alt="" width="16" height="16" />
+            </span>
+            Able to Undo
+          </li>
+        </ul>
+      </aside>
+
+      <!-- small legend-open button (svg legend icon) shown only when legend is hidden -->
+      <button
+        id="legendOpen"
+        class="legend-open"
+        aria-hidden="true"
+        title="Show legend"
+        aria-label="Show legend"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <!-- three colored dots and lines representing legend items -->
+          <circle cx="3.5" cy="4.5" r="1.2" fill="#bdbdbd"/>
+          <rect x="6.5" y="3.6" width="10" height="1.8" rx="0.9" fill="#eef2ff"/>
+
+          <circle cx="3.5" cy="9.5" r="1.2" fill="#2563eb"/>
+          <rect x="6.5" y="8.6" width="10" height="1.8" rx="0.9" fill="#eef2ff"/>
+
+          <circle cx="3.5" cy="14.5" r="1.2" fill="#16a34a"/>
+          <rect x="6.5" y="13.6" width="10" height="1.8" rx="0.9" fill="#eef2ff"/>
+        </svg>
+      </button>
     </div>
 
-    <div id="legend">
-      <h3>Legend</h3>
-      <ul>
-        <li><span class="legend-box grey"></span>Unavailable</li>
-        <li><span class="legend-box blue"></span>Ready to Take</li>
-        <li><span class="legend-box green"></span>Complete</li>
-        <li>
-          <span class="legend-box undo">
-            <img src="svg/undo.svg" alt="Undo" width="18" height="18" />
-          </span>
-          Able to Undo
-        </li>
-      </ul>
-    </div>
+    <!-- script moved inside body bottom; fixes initial visibility and avoids duplicates -->
+    <script>
+      (function () {
+        // legend toggle: show/hide and persist preference
+        const LEGEND_KEY = "cdg.legendHidden";
+
+        // single legend inside #container
+        const legend = document.querySelector("#container > #legend");
+        const closeBtn = document.getElementById("legendToggle");
+        const openBtn = document.getElementById("legendOpen");
+
+        if (!legend || !closeBtn || !openBtn) return;
+
+        function setLegendHidden(hidden, persist = true) {
+          if (hidden) {
+            legend.classList.remove("legend-visible");
+            legend.classList.add("legend-hidden");
+            legend.setAttribute("aria-hidden", "true");
+            closeBtn.setAttribute("aria-pressed", "true");
+            closeBtn.title = "Show legend";
+            // hide the close button and show the open button
+            closeBtn.style.display = "none";
+            openBtn.style.display = "inline-flex";
+            openBtn.setAttribute("aria-hidden", "false");
+          } else {
+            legend.classList.remove("legend-hidden");
+            legend.classList.add("legend-visible");
+            legend.setAttribute("aria-hidden", "false");
+            closeBtn.setAttribute("aria-pressed", "false");
+            closeBtn.title = "Hide legend";
+            // show the close button and hide the open button
+            closeBtn.style.display = "inline-flex";
+            openBtn.style.display = "none";
+            openBtn.setAttribute("aria-hidden", "true");
+          }
+          if (persist) {
+            localStorage.setItem(LEGEND_KEY, hidden ? "true" : "false");
+          }
+        }
+
+        // initialize from storage (default: visible)
+        const stored = localStorage.getItem(LEGEND_KEY);
+        const startHidden = stored === "true";
+
+        // ensure DOM default display states before applying persisted state
+        closeBtn.style.display = "inline-flex";
+        openBtn.style.display = "none";
+        openBtn.setAttribute("aria-hidden", "true");
+
+        setLegendHidden(startHidden, false);
+
+        // close inside legend
+        closeBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          setLegendHidden(true);
+        });
+
+        // open via help button
+        openBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          setLegendHidden(false);
+        });
+      })();
+    </script>
   </body>
 </html>
