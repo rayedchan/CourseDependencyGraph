@@ -80,9 +80,30 @@
         />
       </button>
       <div id="sidePanel">
-        <form id="courses">
-          <div id="courseButtons"></div>
-        </form>
+        <!-- header inside the panel (will stay fixed while content scrolls) -->
+        <div
+          class="sidepanel-header"
+          role="banner"
+          aria-label="Courses panel header"
+        >
+          <h2 class="sidepanel-title">Courses</h2>
+          <button
+            id="sidePanelClose"
+            class="sidepanel-close"
+            type="button"
+            aria-label="Close side panel"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- scrollable content area -->
+        <div class="sidepanel-content" role="region" aria-label="Courses list">
+          <form id="courses">
+            <div id="courseButtons"></div>
+          </form>
+        </div>
       </div>
 
       <!-- Legend placed over bottom-left of the canvas (shows by default) -->
@@ -233,6 +254,32 @@
           e.stopPropagation();
           setLegendHidden(false);
         });
+
+        // ----------------------------------------------------------
+        // NEW: prepend academicMajor text to side panel heading
+        // ----------------------------------------------------------
+        const majorSelect = document.getElementById("academicMajor");
+        const sideTitle = document.querySelector("#sidePanel .sidepanel-title");
+        function updateSidepanelTitle() {
+          if (!sideTitle || !majorSelect) return;
+          const idx = majorSelect.selectedIndex;
+          const majorText =
+            (majorSelect.options &&
+              majorSelect.options[idx] &&
+              majorSelect.options[idx].text) ||
+            majorSelect.value ||
+            "";
+          // prepend major text to the heading (e.g. "Computer Science — Courses")
+          sideTitle.textContent = majorText + " Courses";
+        }
+
+        // set initial title and listen for changes
+        updateSidepanelTitle();
+        if (majorSelect) {
+          majorSelect.addEventListener("change", updateSidepanelTitle);
+        }
+        // also update if options are changed dynamically elsewhere
+        // (mutation observer optional)
       })();
     </script>
   </body>

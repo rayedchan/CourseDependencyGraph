@@ -45,9 +45,20 @@ body {
 
 /* Header: single-row layout, left brand, right controls */
 #appHeader {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 1200;
+
+  /* adjusted header background for a clearer, techy look */
+  background: linear-gradient(180deg, #f0f6ff 0%, #e8f0ff 60%, #eef4ff 100%);
+  backdrop-filter: blur(6px);
+
+  /* visible divider and soft shadow */
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 10px rgba(8, 15, 30, 0.04);
+
   width: 100%;
-  max-width: 1200px;
-  margin: 18px 0;
   padding: 12px 20px;
   box-sizing: border-box;
   display: flex;
@@ -172,6 +183,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+/* side panel: column layout with a sticky header and scrollable content */
+#sidePanel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  /* ensure the panel clips overflow; inner content will scroll */
+  overflow: hidden;
+  /* existing rules (width, background, transition) remain */
 }
 
 #sidePanel.visible {
@@ -496,4 +517,86 @@ The "*" affects any input element whose name attribute value contains the string
 /* Hide element from Page*/
 .hidden {
   display: none;
+}
+
+/* ensure side panel can position the close button */
+#sidePanel {
+  position: relative; /* added so absolute close button is positioned inside */
+  /* ...existing side panel rules... */
+}
+
+/* hide the header show-courses button when panel is open */
+body.panel-open #sidePanelToggle {
+  display: none !important;
+}
+
+/* close button inside the panel (top-right) */
+.sidepanel-close {
+  position: absolute;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  color: #0f172a;
+  display: none; /* shown only when panel visible */
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.08);
+  font-size: 16px;
+  line-height: 1;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+/* header inside side panel that stays visible while scrolling */
+#sidePanel .sidepanel-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: inherit; /* matches panel background */
+  border-bottom: 1px solid rgba(2, 6, 23, 0.04);
+  box-sizing: border-box;
+}
+
+/* title styling inside panel header */
+#sidePanel .sidepanel-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0b1220;
+  line-height: 1;
+}
+
+/* scrollable content area */
+#sidePanel .sidepanel-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+#sidePanel.visible .sidepanel-close {
+  display: inline-flex;
+}
+
+/* keep previous hover behavior */
+.sidepanel-close:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+/* ensure panel content items don't cause horizontal overflow */
+#sidePanel,
+#sidePanel * {
+  box-sizing: border-box;
+  max-width: 100%;
+  word-break: break-word;
 }

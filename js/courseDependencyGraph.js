@@ -93,14 +93,6 @@ $(document).ready(function () {
       $.clearEntireGraph(courseArray, nodeStateArray);
     };
 
-    var labelTag = document.createElement("label"); //creates the title on the side panel
-    var coursesDiv = document.getElementById("courses"); //get the div tag with id = courses
-    var academicMajorName = $(
-      "#academicMajor option[value='" + jsonFile + "']"
-    ).text(); //get the value of the current select option
-    labelTag.innerHTML = "<b>" + academicMajorName + " Courses</b><br/>"; //set the content of label tag
-    coursesDiv.insertBefore(labelTag, coursesDiv.firstChild); //add title as the first child
-
     //Dynamically generate trigger event buttons for courses
     //E.g. document.getElementById('MAT151').onclick = function(){changeNodeState('MAT151')};
     for (courseCode in courseArray) {
@@ -1057,32 +1049,62 @@ function initializeParticleSystem() {
   };
 })(jQuery);
 
-/* Side Panel Toggle Functionality */
-document.addEventListener("DOMContentLoaded", function () {
-  const sidePanel = document.getElementById("sidePanel");
-  const toggleBtn = document.getElementById("sidePanelToggle");
-
-  // Ensure side panel starts hidden (no .visible class)
-  sidePanel.classList.remove("visible");
-
-  toggleBtn.addEventListener("click", function () {
-    sidePanel.classList.toggle("visible");
-    // Resize canvas after the panel transition
-    setTimeout(resizeCanvas, 360);
-  });
-});
-
-/* Canvas & Particle System Resizing */
-function resizeCanvas() {
-  const canvas = document.getElementById("viewport");
-  if (canvas) {
-    // Set canvas pixel size to match its flexed size for crisp rendering
+/* Side panel open/close handling — hide header button when open, show close inside panel */
+(function () {
+  // small resilient resize routine (used after panel animation)
+  function _resizeCanvas() {
+    var canvas = document.getElementById("viewport");
+    if (!canvas) return;
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    // inform particle system of new size
-    particleSystem.screenSize(canvas.clientWidth, canvas.clientHeight);
+    particleSystem.screenSize(canvas.width, canvas.height);
   }
-}
 
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("DOMContentLoaded", resizeCanvas);
+  document.addEventListener("DOMContentLoaded", function () {
+    var panel = document.getElementById("sidePanel");
+    var openBtn = document.getElementById("sidePanelToggle");
+    var closeBtn = document.getElementById("sidePanelClose");
+
+    if (!panel) return;
+
+    function setPanelOpen(open) {
+      if (open) {
+        panel.classList.add("visible");
+        document.body.classList.add("panel-open");
+        panel.setAttribute("aria-hidden", "false");
+      } else {
+        panel.classList.remove("visible");
+        document.body.classList.remove("panel-open");
+        panel.setAttribute("aria-hidden", "true");
+      }
+      // sync after CSS transition
+      setTimeout(_resizeCanvas, 360);
+    }
+
+    // initialize closed
+    setPanelOpen(false);
+
+    if (openBtn) {
+      openBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        setPanelOpen(true);
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        setPanelOpen(false);
+      });
+    }
+
+    // close on Escape
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") setPanelOpen(false);
+    });
+
+    window.addEventListener("resize", _resizeCanvas);
+    // initial canvas sizing
+    _resizeCanvas();
+  });
+})();
