@@ -60,10 +60,8 @@ body {
 
 /* Header: single-row layout, left brand, right controls */
 #appHeader {
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 1200;
+  position: relative;
+  z-index: 1400; /* Higher than legend (1200) and side panel (10) */
 
   /* adjusted header background for a clearer, techy look */
   background: linear-gradient(180deg, #f0f6ff 0%, #e8f0ff 60%, #eef4ff 100%);
@@ -121,26 +119,107 @@ body {
 
 /* modern control buttons */
 .control-btn {
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  color: var(--text-primary);
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: #eef2ff;
-  color: #3730a3;
-  border: 1px solid rgba(99, 102, 241, 0.12);
-  font-weight: 600;
-  font-size: 0.92rem;
-  text-decoration: none;
+  justify-content: center;
   cursor: pointer;
-  transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 160ms ease;
+  white-space: nowrap;
+}
+
+.control-icon-btn {
+  padding: 0.625rem;
+  min-width: 42px;
+  min-height: 42px;
+  position: relative;
+}
+
+.control-icon-btn svg {
+  display: block;
+}
+
+/* Tooltip styling for icon buttons */
+.control-icon-btn::after {
+  content: attr(title);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms;
+  z-index: 1300;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Small arrow pointing up (to the button) */
+.control-icon-btn::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid rgba(15, 23, 42, 0.95);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms;
+  z-index: 1300;
+}
+
+/* Show tooltip on hover */
+.control-icon-btn:hover::after,
+.control-icon-btn:hover::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ensure tooltip doesn't trigger on touch devices */
+@media (hover: none) {
+  .control-icon-btn::after,
+  .control-icon-btn::before {
+    display: none;
+  }
 }
 
 .control-btn:hover {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.2);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.08);
-  background: #e8eefc;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+}
+
+/* Prevent tooltip transform from affecting button hover transform */
+.control-icon-btn:hover {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);
+  /* Remove translateY so it doesn't interfere with tooltip */
+}
+
+.control-btn:active {
+  transform: translateY(0);
 }
 
 /* compact select styling */
@@ -711,4 +790,269 @@ body.panel-open #sidePanelToggle {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Header: stack vertically */
+  #appHeader {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+    height: auto;
+    min-height: var(--header-height);
+  }
+
+  .brand {
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .brand h1 {
+    font-size: 1.5rem;
+  }
+
+  .brand-accent {
+    display: none;
+  }
+
+  .brand-sub {
+    font-size: 0.75rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .control-select,
+  .control-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Container: stack canvas, legend, and side panel vertically */
+  #container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - var(--header-height));
+  }
+
+  /* Canvas section */
+  #viewport {
+    position: relative;
+    width: 100%;
+    height: 60vh;
+    min-height: 400px;
+  }
+
+  /* Hide side panel toggle button on mobile */
+  #sidePanelToggle {
+    display: none;
+  }
+
+  /* Side panel: no longer fixed overlay, flows in document */
+  #sidePanel {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto;
+    transform: none !important;
+    box-shadow: none;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    z-index: 1;
+    padding: 0 !important;
+    background: #f8f9fa;
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  #sidePanel.closed {
+    transform: none !important;
+    display: block;
+  }
+
+  #sidePanel.visible {
+    width: 100% !important;
+    min-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .sidepanel-header {
+    padding: 1rem;
+    position: relative;
+    border-bottom: 1px solid rgba(2, 6, 23, 0.04);
+  }
+
+  /* Hide close button on mobile since panel is always visible */
+  .sidepanel-close {
+    display: none !important;
+  }
+
+  .sidepanel-content {
+    padding: 1rem;
+    max-height: none;
+    overflow-y: visible !important;
+    flex: 1;
+  }
+
+  /* Legend: no longer overlay, flows in document before side panel */
+  #container > #legend {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    max-width: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    padding: 1rem;
+    box-shadow: none;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  #container > #legend.legend-hidden {
+    display: none !important;
+  }
+
+  #container > #legend.legend-visible {
+    display: flex !important;
+  }
+
+  #container > #legend h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  #container > #legend ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #container > #legend li {
+    font-size: 0.875rem;
+  }
+
+  #container > #legend .legend-toggle {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  /* Hide legend open button on mobile (legend is always visible or toggled via close) */
+  #container > .legend-open {
+    display: none !important;
+  }
+
+  /* Course cards: adjust for mobile touch targets */
+  .course-card {
+    padding: 1rem;
+    min-height: 80px;
+  }
+
+  .course-card-title {
+    font-size: 0.9rem;
+  }
+
+  .course-card-prereq {
+    font-size: 0.75rem;
+  }
+
+  .completed-item {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  /* Adjust panel subtitles */
+  .panel-subtitle {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Increase touch target sizes for better mobile UX */
+  .control-btn,
+  .control-select {
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+
+  .control-icon-btn {
+    padding: 0.875rem;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  /* Hide tooltips on mobile - rely on long press or accessibility labels */
+  .control-icon-btn::after,
+  .control-icon-btn::before {
+    display: none;
+  }
+
+  /* Adjust completed and remaining lists */
+  .completed-list,
+  .remaining-list {
+    margin-bottom: 1.5rem;
+  }
+
+  #completedList {
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+  }
+
+  #courseButtons {
+    gap: 0.75rem;
+  }
+}
+
+/* Extra small devices (phones in portrait) */
+@media (max-width: 480px) {
+  .brand h1 {
+    font-size: 1.25rem;
+  }
+
+  #viewport {
+    height: 50vh;
+    min-height: 350px;
+  }
+
+  .course-card-title {
+    font-size: 0.85rem;
+  }
+
+  .course-card-prereq {
+    font-size: 0.7rem;
+  }
+
+  .sidepanel-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .sidepanel-content {
+    padding: 0.75rem 1rem;
+  }
+
+  #legend {
+    padding: 0.75rem 1rem;
+  }
 }

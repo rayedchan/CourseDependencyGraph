@@ -62,10 +62,37 @@
           <option value="json/mathematics.json">Mathematics</option>
           <option value="json/psychology.json">Psychology</option>
         </select>
-        <a id="displayEntireDependencyGraph" href="#" class="control-btn"
-          >Display Full Graph</a
+        <button 
+          id="displayEntireDependencyGraph" 
+          class="control-btn control-icon-btn" 
+          title="Display Full Graph"
+          aria-label="Display Full Graph"
         >
-        <a id="clearGraph" href="#" class="control-btn">Reset Graph</a>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Network/graph icon -->
+            <circle cx="4" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="16" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="4" cy="16" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="16" cy="16" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <line x1="6" y1="5" x2="8" y2="9" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="14" y1="5" x2="12" y2="9" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="6" y1="15" x2="8" y2="11" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="14" y1="15" x2="12" y2="11" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+        <button 
+          id="clearGraph" 
+          class="control-btn control-icon-btn" 
+          title="Reset Graph"
+          aria-label="Reset Graph"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Circular arrow/refresh icon -->
+            <path d="M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C11.7 3 13.2 3.6 14.4 4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M14 2V5H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -79,40 +106,9 @@
           height="20"
         />
       </button>
-      <div id="sidePanel">
-        <div
-          class="sidepanel-header"
-          role="banner"
-          aria-label="Courses panel header"
-        >
-          <h2 class="sidepanel-title">Courses</h2>
-          <button
-            id="sidePanelClose"
-            class="sidepanel-close"
-            type="button"
-            aria-label="Close side panel"
-            title="Close"
-          >
-            ✕
-          </button>
-        </div>
 
-        <div class="sidepanel-content" role="region" aria-label="Courses list">
-          <!-- Completed courses section -->
-          <section id="completedCourses" class="completed-list">
-            <h3 class="panel-subtitle">Completed</h3>
-            <div id="completedList"></div>
-          </section>
-
-          <!-- Remaining courses section -->
-          <section id="remainingCourses" class="remaining-list">
-            <h3 class="panel-subtitle">Available</h3>
-            <div id="courseButtons"></div>
-          </section>
-        </div>
-      </div>
-
-      <!-- Legend placed over bottom-left of the canvas (shows by default) -->
+      <!-- Legend now flows in document on mobile (order: legend → side panel) -->
+      <!-- Legend placed over bottom-left of the canvas on desktop (shows by default) -->
       <aside
         id="legend"
         class="legend-visible"
@@ -190,6 +186,39 @@
           />
         </svg>
       </button>
+
+      <div id="sidePanel">
+        <div
+          class="sidepanel-header"
+          role="banner"
+          aria-label="Courses panel header"
+        >
+          <h2 class="sidepanel-title">Courses</h2>
+          <button
+            id="sidePanelClose"
+            class="sidepanel-close"
+            type="button"
+            aria-label="Close side panel"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="sidepanel-content" role="region" aria-label="Courses list">
+          <!-- Completed courses section -->
+          <section id="completedCourses" class="completed-list">
+            <h3 class="panel-subtitle">Completed</h3>
+            <div id="completedList"></div>
+          </section>
+
+          <!-- Remaining courses section -->
+          <section id="remainingCourses" class="remaining-list">
+            <h3 class="panel-subtitle">Available</h3>
+            <div id="courseButtons"></div>
+          </section>
+        </div>
+      </div>
     </div>
 
     <!-- script moved inside body bottom; fixes initial visibility and avoids duplicates -->
