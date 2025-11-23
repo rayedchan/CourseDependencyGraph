@@ -43,12 +43,29 @@ $(document).ready(function () {
 
   // Executed whenever an academic major changes
   $acadMajor.change(function () {
-    var prevAcadMajorJSON = $(this).data("oldVal"); // Fetch the previous academic major
     var newAcadMajorJSON = $(this).val(); // Get the new selected academic major
-    $.clearCourseButtons(); // Clear the previous academic major courses
-    $.clearParticleSystem(prevAcadMajorJSON); // Clear the previous academic major by removing the objects within the particle system
-    $.builtSystem(newAcadMajorJSON); // Add the new academic major objects into the particle system
-    $acadMajor.data("oldVal", newAcadMajorJSON); // Store new json file as old value
+
+    // Clear particle system completely
+    particleSystem.prune(function () {
+      return true;
+    }); // remove all nodes and edges
+
+    // Clear side panel sections
+    var completedList = document.getElementById("completedList");
+    var courseButtons = document.getElementById("courseButtons");
+    if (completedList) completedList.innerHTML = "";
+    if (courseButtons) courseButtons.innerHTML = "";
+
+    // Remove all hidden input elements
+    var hiddenInputs = document.querySelectorAll('input[type="hidden"]');
+    for (var i = 0; i < hiddenInputs.length; i++) {
+      if (hiddenInputs[i].parentNode) {
+        hiddenInputs[i].parentNode.removeChild(hiddenInputs[i]);
+      }
+    }
+
+    // Rebuild with new major
+    $.builtSystem(newAcadMajorJSON);
   });
 });
 
@@ -489,17 +506,11 @@ function initializeParticleSystem() {
     var courseButtons = document.getElementById("courseButtons");
 
     if (completedList && courseButtons) {
+      // Collect ALL course codes from courseArray (not just from remaining section)
+      var courseCodes = Object.keys(courseArray);
+
       // Clear both sections
       completedList.innerHTML = "";
-
-      // Get all remaining cards
-      var remainingCards = courseButtons.querySelectorAll("[data-course]");
-      var courseCodes = [];
-      for (var i = 0; i < remainingCards.length; i++) {
-        courseCodes.push(remainingCards[i].getAttribute("data-course"));
-      }
-
-      // Clear remaining section
       courseButtons.innerHTML = "";
 
       // Helper function to create a remaining card (reuse logic from $.builtSystem)
