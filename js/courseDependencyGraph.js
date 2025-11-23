@@ -7,9 +7,9 @@ var NODE_SHAPE = "dot";
 var UNAVALIABLE_STATE = 0; // Grey Node or Non-Existent Node
 var COMPLETED_STATE = 1; // Green Node
 var READY_STATE = 2; // Blue Node
-var UNAVALIABLE_STATE_COLOR = "grey";
-var COMPLETED_STATE_COLOR = "green";
-var READY_STATE_COLOR = "blue";
+var UNAVALIABLE_STATE_COLOR = "#bdbdbd"; //"grey";
+var COMPLETED_STATE_COLOR = "#16a34a"; // "green";
+var READY_STATE_COLOR = "#2563eb"; // "blue";
 
 // Mapping state to corresponding color
 var numToColorMapping = {}; // new object
