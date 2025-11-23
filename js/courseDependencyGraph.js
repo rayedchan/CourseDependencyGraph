@@ -122,10 +122,10 @@ $(document).ready(function () {
       // click selects the course (adds to completed)
       button.addEventListener("click", function (e) {
         e.preventDefault();
-        
+
         var ctx = window.currentCDG;
         if (!ctx) return;
-        
+
         $.changeNodeState(
           ctx.courseArray,
           ctx.outgoingEdgeGraphArray,
@@ -185,6 +185,11 @@ $(document).ready(function () {
 
       // update classes
       setCourseClass(code, "completedState");
+
+      // re-evaluate all remaining courses after completing one
+      if (typeof $.syncRemainingCardsUI === "function") {
+        $.syncRemainingCardsUI(courseArray, nodeStateArray);
+      }
     }
 
     function ensureInRemaining(cardElement) {
@@ -263,7 +268,11 @@ $(document).ready(function () {
         courseButtons.appendChild(card);
       }
 
-      setCourseClass(code, "readyState");
+      // Don't assume this course is ready - let syncRemainingCardsUI evaluate it
+      // along with all other courses that may have been affected
+      if (typeof $.syncRemainingCardsUI === "function") {
+        $.syncRemainingCardsUI(courseArray, nodeStateArray);
+      }
     }
 
     // Dynamically generate course cards
@@ -1300,17 +1309,12 @@ function setCourseClass(courseId, className) {
 
       if (ready) {
         // mark ready
-        card.classList.remove("inactiveState");
-        if (!card.classList.contains("readyState"))
-          card.classList.add("readyState");
-        // keep model in sync
         nodeStateArray[code] = READY_STATE;
+        setCourseClass(code, "readyState"); // use setCourseClass to update both class and disabled
       } else {
         // mark unavailable
-        card.classList.remove("readyState");
-        if (!card.classList.contains("inactiveState"))
-          card.classList.add("inactiveState");
         nodeStateArray[code] = UNAVALIABLE_STATE;
+        setCourseClass(code, "inactiveState"); // use setCourseClass to update both class and disabled
       }
 
       // also update particleSystem node color if present
