@@ -423,6 +423,7 @@ function initializeParticleSystem() {
 /*
  * Reset Graph (Particle System) to its default state.
  * Removes all the nodes and edges. Adds the root nodes.
+ * Moves completed courses back to remaining section.
  *
  * @param -
  *      courseArray - JSON containing data of the whole system (courses of a single academic major)
@@ -430,8 +431,12 @@ function initializeParticleSystem() {
  */
 (function ($) {
   $.clearEntireGraph = function (courseArray, nodeStateArray) {
-    //does not work since nodeStateArray is a local copy, but the properties/elements can still be modified
-    //nodeStateArray = {};//initialize a new object; previous object is garbage collected
+    // Simply clear both sections - $.builtSystem will rebuild everything
+    var completedList = document.getElementById("completedList");
+    var courseButtons = document.getElementById("courseButtons");
+
+    if (completedList) completedList.innerHTML = "";
+    if (courseButtons) courseButtons.innerHTML = "";
 
     //Clear nodeStateArray
     for (var code in nodeStateArray) {
@@ -441,20 +446,26 @@ function initializeParticleSystem() {
     //Iterate all courses in major
     for (var key in courseArray) {
       $("#" + key + "Undo").addClass("hidden"); //hide undo button
-      var currentNodeId = key; //String Identifier of current node
-      setCourseClass(currentNodeId, "inactiveState");
+      // Remove hidden input elements that were created
+      var hiddenInput = document.getElementById(key);
+      if (hiddenInput && hiddenInput.parentNode) {
+        hiddenInput.parentNode.removeChild(hiddenInput);
+      }
 
       //determine if node exist in Particle system
-      if ($.doesNodeExist(currentNodeId))
-        particleSystem.pruneNode(currentNodeId); //Removes the corresponding Node from the particle system (as well as any Edges in which it is a participant).
+      if ($.doesNodeExist(key)) particleSystem.pruneNode(key);
     }
 
-    $.initializeGraph(courseArray, nodeStateArray); //set to initial state of graph
+    // Rebuild the entire system from scratch with fresh handlers
+    // This is cleaner than trying to patch up stale handlers
+    var currentMajor = $("#academicMajor").val();
+    $.builtSystem(currentMajor);
   };
 })(jQuery);
 
 /*
  * Create the entire course dependency graph of an academic major.
+ * Marks all courses as completed and moves them to the completed section.
  *
  * @param -
  *      courseArray - JSON containing data of the whole system (courses of a single academic major)
@@ -462,9 +473,291 @@ function initializeParticleSystem() {
  */
 (function ($) {
   $.createEntireCourseDependencyGraph = function (courseArray, nodeStateArray) {
-    $.clearEntireGraph(courseArray, nodeStateArray); //clear existing particle system
+    // Clear particle system but don't rebuild - we'll build the full graph
+    for (var code in nodeStateArray) {
+      delete nodeStateArray[code];
+    }
+    for (var key in courseArray) {
+      if ($.doesNodeExist(key)) particleSystem.pruneNode(key);
+    }
+
     $.createAllNodesForDependencyGraph(courseArray); //create all nodes; each node start off as a singleton
     $.addDependencyEdges(courseArray); //adds the dependency edges
+
+    // Mark all courses as completed and move to completed section
+    var completedList = document.getElementById("completedList");
+    var courseButtons = document.getElementById("courseButtons");
+
+    if (completedList && courseButtons) {
+      // Clear both sections
+      completedList.innerHTML = "";
+
+      // Get all remaining cards
+      var remainingCards = courseButtons.querySelectorAll("[data-course]");
+      var courseCodes = [];
+      for (var i = 0; i < remainingCards.length; i++) {
+        courseCodes.push(remainingCards[i].getAttribute("data-course"));
+      }
+
+      // Clear remaining section
+      courseButtons.innerHTML = "";
+
+      // Helper function to create a remaining card (reuse logic from $.builtSystem)
+      function makeRemainingCardForFullGraph(code, displayName, prereqText) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "course-card remaining";
+        button.setAttribute("data-course", code);
+        button.setAttribute("aria-disabled", "false");
+
+        var title = document.createElement("div");
+        title.className = "course-card-title";
+        title.textContent = code + " — " + displayName;
+
+        var prereq = document.createElement("div");
+        prereq.className = "course-card-prereq";
+        prereq.textContent = prereqText || "";
+
+        button.appendChild(title);
+        button.appendChild(prereq);
+
+        // click handler to add course to completed
+        button.addEventListener("click", function (e) {
+          e.preventDefault();
+          var ctx = window.currentCDG;
+          if (!ctx) return;
+          var courseCode = this.getAttribute("data-course");
+
+          $.changeNodeState(
+            ctx.courseArray,
+            ctx.outgoingEdgeGraphArray,
+            ctx.nodeStateArray,
+            courseCode
+          );
+
+          // If now completed, move to completed section
+          if (ctx.nodeStateArray[courseCode] === COMPLETED_STATE) {
+            // Remove from remaining
+            if (this.parentNode) this.parentNode.removeChild(this);
+
+            // Create completed item
+            var completedItem = document.createElement("button");
+            completedItem.type = "button";
+            completedItem.className = "completed-item";
+            completedItem.setAttribute("data-course", courseCode);
+            completedItem.textContent = courseCode;
+
+            // Add undo handler
+            completedItem.addEventListener("click", function (ev) {
+              ev.preventDefault();
+              var context = window.currentCDG;
+              if (!context) return;
+              var cCode = this.getAttribute("data-course");
+
+              $.changeNodeState(
+                context.courseArray,
+                context.outgoingEdgeGraphArray,
+                context.nodeStateArray,
+                cCode
+              );
+
+              // If no longer completed, move back to remaining
+              if (context.nodeStateArray[cCode] !== COMPLETED_STATE) {
+                // Remove from completed
+                if (this.parentNode) this.parentNode.removeChild(this);
+
+                // Recreate in remaining
+                var dName =
+                  context.courseArray[cCode] && context.courseArray[cCode].Name
+                    ? context.courseArray[cCode].Name
+                    : "";
+
+                var pText = "";
+                var pr = context.courseArray[cCode].Prerequisite;
+                if (pr && pr.length > 0) {
+                  for (var k = 0; k < pr.length; k++) {
+                    if (k > 0) pText += " • ";
+                    if (pr[k] instanceof Array) {
+                      pText += "(" + pr[k].join(" or ") + ")";
+                    } else {
+                      pText += pr[k];
+                    }
+                  }
+                }
+
+                // Find correct insertion position
+                var allCodes = Object.keys(context.courseArray);
+                var targetIndex = allCodes.indexOf(cCode);
+                var existingCards = document
+                  .getElementById("courseButtons")
+                  .querySelectorAll("[data-course]");
+                var inserted = false;
+
+                var newCard = makeRemainingCardForFullGraph(
+                  cCode,
+                  dName,
+                  pText
+                );
+
+                if (targetIndex >= 0) {
+                  for (var m = 0; m < existingCards.length; m++) {
+                    var existingCode =
+                      existingCards[m].getAttribute("data-course");
+                    var existingIndex = allCodes.indexOf(existingCode);
+                    if (existingIndex > targetIndex) {
+                      document
+                        .getElementById("courseButtons")
+                        .insertBefore(newCard, existingCards[m]);
+                      inserted = true;
+                      break;
+                    }
+                  }
+                }
+
+                if (!inserted) {
+                  document.getElementById("courseButtons").appendChild(newCard);
+                }
+
+                // Sync UI
+                if (typeof $.syncRemainingCardsUI === "function") {
+                  $.syncRemainingCardsUI(
+                    context.courseArray,
+                    context.nodeStateArray
+                  );
+                }
+              }
+            });
+
+            var compList = document.getElementById("completedList");
+            if (compList) compList.appendChild(completedItem);
+
+            setCourseClass(courseCode, "completedState");
+
+            // Sync remaining cards
+            if (typeof $.syncRemainingCardsUI === "function") {
+              $.syncRemainingCardsUI(ctx.courseArray, ctx.nodeStateArray);
+            }
+          }
+        });
+
+        return button;
+      }
+
+      // Create completed items for all courses
+      for (var j = 0; j < courseCodes.length; j++) {
+        var code = courseCodes[j];
+
+        // Mark as completed in state
+        nodeStateArray[code] = COMPLETED_STATE;
+
+        // Update particle system node color
+        if (particleSystem.getNode(code)) {
+          particleSystem.getNode(code).data.color = COMPLETED_STATE_COLOR;
+        }
+
+        // Create completed pill button
+        var ctx = window.currentCDG;
+        if (ctx) {
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "completed-item";
+          button.setAttribute("data-course", code);
+          button.textContent = code;
+
+          // Add click handler to undo
+          button.addEventListener(
+            "click",
+            (function (courseCode) {
+              return function (e) {
+                e.preventDefault();
+                var context = window.currentCDG;
+                if (!context) return;
+                $.changeNodeState(
+                  context.courseArray,
+                  context.outgoingEdgeGraphArray,
+                  context.nodeStateArray,
+                  courseCode
+                );
+
+                // If no longer completed, move back to remaining
+                if (context.nodeStateArray[courseCode] !== COMPLETED_STATE) {
+                  // Remove from completed
+                  if (this.parentNode) this.parentNode.removeChild(this);
+
+                  // Recreate in remaining section
+                  var displayName =
+                    context.courseArray[courseCode] &&
+                    context.courseArray[courseCode].Name
+                      ? context.courseArray[courseCode].Name
+                      : "";
+
+                  var prereqText = "";
+                  var preq = context.courseArray[courseCode].Prerequisite;
+                  if (preq && preq.length > 0) {
+                    for (var k = 0; k < preq.length; k++) {
+                      if (k > 0) prereqText += " • ";
+                      if (preq[k] instanceof Array) {
+                        prereqText += "(" + preq[k].join(" or ") + ")";
+                      } else {
+                        prereqText += preq[k];
+                      }
+                    }
+                  }
+
+                  // Find correct insertion position
+                  var allCodes = Object.keys(context.courseArray);
+                  var targetIndex = allCodes.indexOf(courseCode);
+                  var existingCards = document
+                    .getElementById("courseButtons")
+                    .querySelectorAll("[data-course]");
+                  var inserted = false;
+
+                  var newCard = makeRemainingCardForFullGraph(
+                    courseCode,
+                    displayName,
+                    prereqText
+                  );
+
+                  if (targetIndex >= 0) {
+                    for (var m = 0; m < existingCards.length; m++) {
+                      var existingCode =
+                        existingCards[m].getAttribute("data-course");
+                      var existingIndex = allCodes.indexOf(existingCode);
+                      if (existingIndex > targetIndex) {
+                        document
+                          .getElementById("courseButtons")
+                          .insertBefore(newCard, existingCards[m]);
+                        inserted = true;
+                        break;
+                      }
+                    }
+                  }
+
+                  if (!inserted) {
+                    document
+                      .getElementById("courseButtons")
+                      .appendChild(newCard);
+                  }
+
+                  // Sync UI
+                  if (typeof $.syncRemainingCardsUI === "function") {
+                    $.syncRemainingCardsUI(
+                      context.courseArray,
+                      context.nodeStateArray
+                    );
+                  }
+                }
+              };
+            })(code)
+          );
+
+          completedList.appendChild(button);
+        }
+
+        // Update hidden input class
+        setCourseClass(code, "completedState");
+      }
+    }
   };
 })(jQuery);
 
