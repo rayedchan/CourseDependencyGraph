@@ -170,7 +170,7 @@ body {
 
 /* Small arrow pointing up (to the button) */
 .control-icon-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: calc(100% + 2px);
   left: 50%;
