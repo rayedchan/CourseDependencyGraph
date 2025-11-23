@@ -1508,8 +1508,8 @@ function initializeParticleSystem() {
       setTimeout(_resizeCanvas, 360);
     }
 
-    // initialize closed
-    setPanelOpen(false);
+    // initialize open
+    setPanelOpen(true);
 
     if (openBtn) {
       openBtn.addEventListener("click", function (e) {
