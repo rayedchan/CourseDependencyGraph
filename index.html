@@ -80,7 +80,6 @@
         />
       </button>
       <div id="sidePanel">
-        <!-- header inside the panel (will stay fixed while content scrolls) -->
         <div
           class="sidepanel-header"
           role="banner"
@@ -98,11 +97,18 @@
           </button>
         </div>
 
-        <!-- scrollable content area -->
         <div class="sidepanel-content" role="region" aria-label="Courses list">
-          <form id="courses">
+          <!-- Completed courses section -->
+          <section id="completedCourses" class="completed-list">
+            <h3 class="panel-subtitle">Completed</h3>
+            <div id="completedList"></div>
+          </section>
+
+          <!-- Remaining courses section -->
+          <section id="remainingCourses" class="remaining-list">
+            <h3 class="panel-subtitle">Available</h3>
             <div id="courseButtons"></div>
-          </form>
+          </section>
         </div>
       </div>
 
@@ -132,12 +138,6 @@
           </li>
           <li>
             <span class="legend-box green" aria-hidden="true"></span>Complete
-          </li>
-          <li>
-            <span class="legend-box undo" aria-hidden="true">
-              <img src="svg/undo.svg" alt="" width="16" height="16" />
-            </span>
-            Able to Undo
           </li>
         </ul>
       </aside>

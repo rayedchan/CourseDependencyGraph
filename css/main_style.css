@@ -323,17 +323,6 @@ body {
   background: #6e9e2d;
 }
 
-/*Style for all the undo buttons; The square brackets are used as an attribute selector,
-to select all elements that have a certain attribute value. In other words, they detect attribute presence.
-The "*" affects any input element whose name attribute value contains the string “Undo”.*/
-#courses img[id*="Undo"] {
-  width: 16px;
-  height: 16px;
-  background: url(../svg/undo.svg);
-  background-size: 16px 16px;
-  background-repeat: no-repeat;
-}
-
 /*Possible States of course input button*/
 .activeState {
   background: #6e9e2d;
@@ -345,22 +334,6 @@ The "*" affects any input element whose name attribute value contains the string
 
 .inactiveState {
   background: #585858;
-}
-
-/*Side Panel Navigation Menu*/
-#sidePanelNav {
-  display: inline;
-  background: url(../img/bar.gif) center center repeat-x;
-}
-
-#sidePanelNav a {
-  color: black;
-  text-decoration: none;
-  font: bolder 12px "Trebuchet MS";
-}
-
-#sidePanelNav a:hover {
-  color: red;
 }
 
 /* Legend for Graph */
@@ -614,4 +587,128 @@ body.panel-open #sidePanelToggle {
   box-sizing: border-box;
   max-width: 100%;
   word-break: break-word;
+}
+
+/* course card button styling */
+.course-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 6, 23, 0.04);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #0b1220;
+  font-weight: 400;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(2, 6, 23, 0.06);
+}
+
+.course-card:active {
+  transform: translateY(-2px);
+}
+
+.course-card:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* title text inside card (no longer a button) */
+.course-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0b1220;
+}
+
+/* prerequisite text */
+.course-card-prereq {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.3;
+}
+
+/* visual states for cards */
+.course-card.readyState {
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: #f8fbff;
+}
+
+.course-card.inactiveState {
+  opacity: 0.65;
+  background: #fbfcff;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.course-card.inactiveState .course-card-title {
+  color: #94a3b8;
+}
+
+.course-card.completedState {
+  background: #eef2ff;
+  border: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+/* completed item button */
+.completed-item {
+  display: inline-block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: green;
+  color: white;
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  font-weight: 700;
+  margin-bottom: 8px;
+  margin-right: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.completed-item:hover {
+  background: #00be46;
+  transform: translateY(-2px);
+}
+
+.completed-item:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Completed and Remaining sections layout */
+#completedCourses {
+  margin-bottom: 16px;
+}
+
+#remainingCourses {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.panel-subtitle {
+  margin: 0 0 10px 0;
+  font-size: 0.92rem;
+  color: #0b1220;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
+
+#completedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }

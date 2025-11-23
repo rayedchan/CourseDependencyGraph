@@ -24,9 +24,6 @@ var ECONOMICS_JSON_FILE = "json/economics.json";
 var MATHEMATICS_JSON_FILE = "json/mathematics.json";
 var PSYCHOLOGY_JSON_FILE = "json/psychology.json";
 
-// Image source
-var UNDO_BUTTON_SRC = "svg/undo.svg";
-
 // This object represents the graph to built
 var particleSystem = initializeParticleSystem(); // method call creates particle system; the particle system template is used throughout
 
@@ -62,29 +59,31 @@ $(document).ready(function () {
  */
 (function ($) {
   $.builtSystem = function (jsonFile) {
-    particleSystem.renderer = Renderer("#viewport"); // Initializes and redraws Particle system
+    particleSystem.renderer = Renderer("#viewport");
 
-    // Data on the completed Course Dependency Graph and the course dependency graph that is being built.
-    // Associative Array <Key>:<Value> [Course Code : Course Data]
-    // E.g "CS431" : {"Name": "Software Engineering", "Prerequisite" : ["CS112",["CS314","CS336","CS352","CS416"]]}
-    // Incoming edges are provided. These are the prerequisites
-    var courseArray; // stores the json data from file of the completed course dependency graph
-    var outgoingEdgeGraphArray = {}; // {} = new Object(); contain the outgoing edges of each node of the completed graph
-    var nodeStateArray = {}; // keeps track of the current state of each node in the graph that is being built
+    var courseArray;
+    var outgoingEdgeGraphArray = {};
+    var nodeStateArray = {};
 
     $.ajax({
-      url: jsonFile, // url: path to json file
-      async: false, // async: function gets called in sequence with code, so var courseArray is populated
-      dataType: "json", // json data
+      url: jsonFile,
+      async: false,
+      dataType: "json",
       success: function (json) {
         courseArray = json;
-      }, //sets courseArray with json data
+      },
     });
 
-    $.determineAllOutgoingEdges(courseArray, outgoingEdgeGraphArray); //populates the outgoingEdgeGraphArray
-    //console.log(outgoingEdgeGraphArray);
+    $.determineAllOutgoingEdges(courseArray, outgoingEdgeGraphArray);
 
-    //Trigger Event buttons
+    // expose current model so sidepanel handlers can call changeNodeState
+    window.currentCDG = {
+      courseArray: courseArray,
+      outgoingEdgeGraphArray: outgoingEdgeGraphArray,
+      nodeStateArray: nodeStateArray,
+    };
+
+    // Trigger Event buttons
     document.getElementById("displayEntireDependencyGraph").onclick =
       function () {
         $.createEntireCourseDependencyGraph(courseArray, nodeStateArray);
@@ -93,93 +92,228 @@ $(document).ready(function () {
       $.clearEntireGraph(courseArray, nodeStateArray);
     };
 
-    //Dynamically generate trigger event buttons for courses
-    //E.g. document.getElementById('MAT151').onclick = function(){changeNodeState('MAT151')};
-    for (courseCode in courseArray) {
-      var btnShow = document.createElement("input"); //create input element
-      var span = document.createElement("span"); //create span element to display course prerequisites
-      var divSpan = document.createElement("div"); //container for span
-      var spanUndo = document.createElement("img"); //undo indication
+    // Prepare sidepanel containers
+    var completedList = document.getElementById("completedList");
+    var courseButtons = document.getElementById("courseButtons"); // remaining list container
 
-      divSpan.setAttribute("class", "prerequisites"); //set class for div element
-      spanUndo.setAttribute("class", "hidden"); //hide undo indication picture
-      spanUndo.setAttribute("src", UNDO_BUTTON_SRC); //set source of image
-      spanUndo.setAttribute("id", courseCode + "Undo"); //id of undo span
-      btnShow.setAttribute("class", "inactiveState"); //set inactive state for course button
-      btnShow.setAttribute("type", "button"); //set attribute for input element
-      btnShow.setAttribute("id", courseCode); //set id for input button
-      btnShow.value = courseCode + ": " + courseArray[courseCode].Name; //set name value for element
-      btnShow.onclick = (function (courseCode) {
+    // ensure containers exist (clear previous)
+    if (completedList) completedList.innerHTML = "";
+    if (courseButtons) courseButtons.innerHTML = "";
+
+    // helper to render a remaining course card (as button)
+    function makeRemainingCard(code, displayName, prereqText) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "course-card remaining";
+      button.setAttribute("data-course", code);
+      button.setAttribute("aria-disabled", "false");
+
+      var title = document.createElement("div");
+      title.className = "course-card-title";
+      title.textContent = code + " — " + displayName;
+
+      var prereq = document.createElement("div");
+      prereq.className = "course-card-prereq";
+      prereq.textContent = prereqText || "";
+
+      button.appendChild(title);
+      button.appendChild(prereq);
+
+      // click selects the course (adds to completed)
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        
+        var ctx = window.currentCDG;
+        if (!ctx) return;
+        
+        $.changeNodeState(
+          ctx.courseArray,
+          ctx.outgoingEdgeGraphArray,
+          ctx.nodeStateArray,
+          code
+        );
+
+        // after state change, if completed move to completed list
+        var newState = ctx.nodeStateArray[code];
+        if (newState === COMPLETED_STATE) {
+          moveToCompleted(button, code);
+        } else {
+          ensureInRemaining(button);
+        }
+      });
+
+      return button;
+    }
+
+    // helper to render a completed small item (clickable to remove)
+    function makeCompletedItem(code) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "completed-item";
+      button.setAttribute("data-course", code);
+      button.textContent = code;
+
+      // clicking completed removes (undo) using existing logic
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        var ctx = window.currentCDG;
+        if (!ctx) return;
+        $.changeNodeState(
+          ctx.courseArray,
+          ctx.outgoingEdgeGraphArray,
+          ctx.nodeStateArray,
+          code
+        );
+
+        // after change, if not completed put back to remaining
+        var newState = ctx.nodeStateArray[code];
+        if (newState !== COMPLETED_STATE) {
+          moveToRemaining(button, code);
+        }
+      });
+
+      return button;
+    }
+
+    function moveToCompleted(cardElement, code) {
+      // remove any extra content and render small completed item
+      if (cardElement && cardElement.parentNode)
+        cardElement.parentNode.removeChild(cardElement);
+
+      var completedItem = makeCompletedItem(code);
+      if (completedList) completedList.appendChild(completedItem);
+
+      // update classes
+      setCourseClass(code, "completedState");
+    }
+
+    function ensureInRemaining(cardElement) {
+      if (!courseButtons) return;
+      if (!cardElement.parentNode) courseButtons.appendChild(cardElement);
+      setCourseClass(cardElement.getAttribute("data-course"), "readyState");
+    }
+
+    function moveToRemaining(completedElementOrCode, codeIfNeeded) {
+      var code =
+        codeIfNeeded ||
+        (completedElementOrCode &&
+          completedElementOrCode.getAttribute &&
+          completedElementOrCode.getAttribute("data-course"));
+      // remove completed element from DOM if passed element
+      if (
+        completedElementOrCode &&
+        completedElementOrCode.parentNode &&
+        typeof completedElementOrCode.textContent === "string"
+      ) {
+        completedElementOrCode.parentNode.removeChild(completedElementOrCode);
+      } else {
+        // try to remove by selector
+        var el = document.querySelector(
+          '#completedList [data-course="' + code + '"]'
+        );
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }
+
+      if (!courseButtons) return;
+
+      // recreate remaining card
+      var displayName =
+        courseArray[code] && courseArray[code].Name
+          ? courseArray[code].Name
+          : "";
+
+      // Build prereq text same way as initial card generation
+      var prereqText = "";
+      var preq = courseArray[code].Prerequisite;
+      if (preq && preq.length > 0) {
+        for (var i = 0; i < preq.length; i++) {
+          if (i > 0) prereqText += " • ";
+          if (preq[i] instanceof Array) {
+            prereqText += "(" + preq[i].join(" or ") + ")";
+          } else {
+            prereqText += preq[i];
+          }
+        }
+      }
+
+      var card = makeRemainingCard(code, displayName, prereqText);
+
+      // find the correct insertion position based on courseArray order
+      var allCodes = Object.keys(courseArray);
+      var targetIndex = allCodes.indexOf(code);
+      var inserted = false;
+
+      if (targetIndex >= 0) {
+        // loop through existing cards and find where to insert
+        var existingCards = courseButtons.querySelectorAll("[data-course]");
+        for (var i = 0; i < existingCards.length; i++) {
+          var existingCode = existingCards[i].getAttribute("data-course");
+          var existingIndex = allCodes.indexOf(existingCode);
+          if (existingIndex > targetIndex) {
+            // insert before this card
+            courseButtons.insertBefore(card, existingCards[i]);
+            inserted = true;
+            break;
+          }
+        }
+      }
+
+      // if not inserted yet (no suitable position found), append to end
+      if (!inserted) {
+        courseButtons.appendChild(card);
+      }
+
+      setCourseClass(code, "readyState");
+    }
+
+    // Dynamically generate course cards
+    for (var courseCode in courseArray) {
+      var displayName = courseArray[courseCode].Name || "";
+      var prerequisiteObj = courseArray[courseCode].Prerequisite;
+      var prerequisiteString = "";
+      if (!(typeof prerequisiteObj === "undefined")) {
+        // produce a short textual summary
+        for (var i = 0; i < prerequisiteObj.length; i++) {
+          if (i > 0) prerequisiteString += " • ";
+          if (prerequisiteObj[i] instanceof Array)
+            prerequisiteString += "(" + prerequisiteObj[i].join(" or ") + ")";
+          else prerequisiteString += prerequisiteObj[i];
+        }
+      }
+
+      // Create hidden legacy input for compatibility (kept but visually hidden)
+      var hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = courseCode;
+      // still attach legacy onclick to maintain particle system behaviour if other code triggers it
+      hiddenInput.onclick = (function (c) {
         return function () {
           $.changeNodeState(
             courseArray,
             outgoingEdgeGraphArray,
             nodeStateArray,
-            courseCode
+            c
           );
         };
-      })(courseCode); //attach custom onclick function to button
+      })(courseCode);
+      document.body.appendChild(hiddenInput);
 
-      var prerequisiteObj = courseArray[courseCode].Prerequisite;
-      var prerequisiteString = "";
+      // create remaining card and append
+      var card = makeRemainingCard(courseCode, displayName, prerequisiteString);
+      if (courseButtons) courseButtons.appendChild(card);
 
-      //Generate the Prequisite string for a course
-      if (!(typeof prerequisiteObj === "undefined")) {
-        prerequisiteString = " Prerequisite: ";
-
-        // Iterate through the prerequisites
-        for (var i = 0; i < prerequisiteObj.length; i++) {
-          var preqAndOrObj = prerequisiteObj[i]; // The prerequisite object may be a string or a list
-
-          //Always dealing with two or more "OR elements"
-          if (preqAndOrObj instanceof Array) {
-            var preqOrObjLength = preqAndOrObj.length;
-            var lastOrElementIndex = preqOrObjLength - 1;
-
-            //Case: OR group is not first element
-            if (i != 0) {
-              prerequisiteString = prerequisiteString + " and ";
-            }
-
-            for (var j = 0; j < preqOrObjLength; j++) {
-              var preqOrElement = preqAndOrObj[j];
-
-              //Case 1: OR first element
-              if (j == 0)
-                prerequisiteString = prerequisiteString + " [ " + preqOrElement;
-              //Case 2: OR last element
-              else if (j == lastOrElementIndex)
-                prerequisiteString =
-                  prerequisiteString + " or " + preqOrElement + " ]";
-              //Case 3: Middle elements
-              else
-                prerequisiteString =
-                  prerequisiteString + " or " + preqOrElement;
-            }
-          } else {
-            //Case 1: first element
-            if (i == 0)
-              prerequisiteString = prerequisiteString + " " + preqAndOrObj;
-            //Case 2: append "and [course code]" to prereq string
-            else
-              prerequisiteString = prerequisiteString + " and " + preqAndOrObj;
-          }
-        }
+      // initial state: root nodes become ready
+      var doesCourseHavePrereq =
+        typeof prerequisiteObj === "undefined" ? false : true;
+      if (!doesCourseHavePrereq) {
+        setCourseClass(courseCode, "readyState");
+        nodeStateArray[courseCode] = READY_STATE;
+      } else {
+        setCourseClass(courseCode, "inactiveState");
       }
-
-      span.innerHTML = prerequisiteString;
-      divSpan.appendChild(span);
-
-      const courseButtons = document.querySelector("#courseButtons");
-      const courseItemDiv = document.createElement("div"); // wrap course in div
-      courseItemDiv.setAttribute("class", "course-item"); // set class for styling a course item
-      courseItemDiv.appendChild(btnShow); // add button to div[id=course-item] tag
-      courseItemDiv.appendChild(spanUndo); // add undo button
-      courseItemDiv.appendChild(divSpan); // add prerequisites tag
-      courseButtons.appendChild(courseItemDiv); // add course item to course buttons div
     }
 
-    $.initializeGraph(courseArray, nodeStateArray); //initialize the default state of the Graph; Add courses with no dependency
+    $.initializeGraph(courseArray, nodeStateArray);
   };
 })(jQuery);
 
@@ -271,7 +405,7 @@ function initializeParticleSystem() {
       if (!doesCourseHavePrereq) {
         $.addNode(courseCode, READY_STATE_COLOR); //add course that has no dependency into graph
         nodeStateArray[courseCode] = READY_STATE; //mark course as "Ready" state
-        $("#" + courseCode).attr("class", "readyState"); //change css of input button to  ready state
+        setCourseClass(courseCode, "readyState");
       }
     }
   };
@@ -299,7 +433,7 @@ function initializeParticleSystem() {
     for (var key in courseArray) {
       $("#" + key + "Undo").addClass("hidden"); //hide undo button
       var currentNodeId = key; //String Identifier of current node
-      $("#" + currentNodeId).attr("class", "inactiveState"); //put the course input button to inactive state
+      setCourseClass(currentNodeId, "inactiveState");
 
       //determine if node exist in Particle system
       if ($.doesNodeExist(currentNodeId))
@@ -491,7 +625,6 @@ function initializeParticleSystem() {
     nodeStateArray,
     nodeId
   ) {
-    //console.log($.printAllNodeState(nodeStateArray));
     var stateVar = nodeStateArray[nodeId];
     var nodeState = typeof stateVar === "undefined" ? -1 : stateVar;
     var canNodeSwitchFromCompletedToReady = $.canNodeSwitchFromCompletedToReady(
@@ -501,47 +634,31 @@ function initializeParticleSystem() {
       nodeId
     );
 
-    //Node changes from completed state -> ready state
+    // Node changes from completed state -> ready state
     if (nodeState == COMPLETED_STATE && canNodeSwitchFromCompletedToReady) {
-      nodeStateArray[nodeId] = READY_STATE; //mark course as "Ready" state
-      $("#" + nodeId).attr("class", "readyState"); //change input button to inactive state
-      particleSystem.getNode(nodeId).data.color = READY_STATE_COLOR;
+      nodeStateArray[nodeId] = READY_STATE;
+      setCourseClass(nodeId, "readyState");
+      if (particleSystem.getNode(nodeId))
+        particleSystem.getNode(nodeId).data.color = READY_STATE_COLOR;
       $.recalculateParticleSystem(
         courseArray,
         outgoingEdgeGraphArray,
         nodeStateArray,
         nodeId
-      ); //recalculate the state of each node that has a relationship with the removed node (look at the removed node's outging edges)
+      );
     }
-
-    //Node is added to the system if it is in ready state
+    // Node is added to the system if it is in ready state
     else if (nodeState == READY_STATE) {
-      $("#" + nodeId).attr("class", "activeState"); //change css of input button to active state
-      $.addNode(nodeId, COMPLETED_STATE_COLOR); //add completed Node to Particle System
-      nodeStateArray[nodeId] = COMPLETED_STATE; //mark course as taken
+      setCourseClass(nodeId, "activeState");
+      $.addNode(nodeId, COMPLETED_STATE_COLOR);
+      nodeStateArray[nodeId] = COMPLETED_STATE;
       $.createNodeOutgoingEdges(
         courseArray,
         outgoingEdgeGraphArray,
         nodeStateArray,
         nodeId
-      ); //add a node's outgoing edges
-    }
-
-    //Recalculate to which see courses can be undo
-    for (var courseCode in courseArray) {
-      var hasAbilityToUndo = $.canNodeSwitchFromCompletedToReady(
-        courseArray,
-        outgoingEdgeGraphArray,
-        nodeStateArray,
-        courseCode
       );
-      var state = nodeStateArray[courseCode];
-      if (state == COMPLETED_STATE && hasAbilityToUndo)
-        $("#" + courseCode + "Undo").removeClass("hidden"); //show undo button
-      else $("#" + courseCode + "Undo").addClass("hidden"); //hide undo button
     }
-
-    //console.log(nodeStateArray);
   };
 })(jQuery);
 
@@ -603,11 +720,9 @@ function initializeParticleSystem() {
               nodeStateArray[child] = stateNum; //update to new state
 
               //Change color of the corresponding input button
-              if (stateNum == READY_STATE)
-                $("#" + child).attr("class", "readyState");
-              //change css of input button to  ready state
+              if (stateNum == READY_STATE) setCourseClass(child, "readyState");
               else if (stateNum == UNAVALIABLE_STATE)
-                $("#" + child).attr("class", "inactiveState"); //put the course input button to inactive state
+                setCourseClass(child, "inactiveState");
             }
           }
         }
@@ -688,9 +803,8 @@ function initializeParticleSystem() {
           $.addNode(seenNodeId, color); //add seen node to graph
           //console.log(nodeStateArray);
 
-          //Change color of the corresponding input button
-          if (stateNum == READY_STATE)
-            $("#" + seenNodeId).attr("class", "readyState"); //change css of input button to  ready state
+          // Change color of the corresponding input button
+          if (stateNum == READY_STATE) setCourseClass(seenNodeId, "readyState");
         }
 
         //case: node is already seen, but new edges are being added which may change the state of exiting target nodes
@@ -707,7 +821,7 @@ function initializeParticleSystem() {
             //console.log(nodeStateArray);
 
             if (stateNum == READY_STATE)
-              $("#" + seenNodeId).attr("class", "readyState"); //change css of input button to  ready state
+              setCourseClass(seenNodeId, "readyState");
           }
         }
 
@@ -1108,3 +1222,137 @@ function initializeParticleSystem() {
     _resizeCanvas();
   });
 })();
+
+// helper: sync course UI class for both legacy hidden input and new card element
+function setCourseClass(courseId, className) {
+  // legacy hidden input (if exists)
+  var input = document.getElementById(courseId);
+  if (input) input.className = className;
+
+  // new card element
+  var card = document.querySelector('[data-course="' + courseId + '"]');
+  if (card) {
+    // normalize classes used in the app
+    card.classList.remove(
+      "inactiveState",
+      "readyState",
+      "activeState",
+      "completedState"
+    );
+    // map to card classes: treat 'activeState' & 'completedState' similarly for styling
+    if (className === "activeState" || className === "completedState")
+      card.classList.add("completedState");
+    else card.classList.add(className);
+
+    // ensure disabled/aria-disabled reflect inactive vs ready
+    var isInactive = className === "inactiveState";
+    // If card is a button element set the disabled property; otherwise fall back to pointer-events
+    if (typeof card.disabled !== "undefined") {
+      card.disabled = isInactive;
+    }
+    card.setAttribute("aria-disabled", isInactive ? "true" : "false");
+  }
+}
+
+// Re-evaluate remaining course readiness and update UI (DOM-first).
+(function ($) {
+  // local readiness checker (handles string and OR-array prereqs)
+  function isCourseReadyLocal(courseArray, nodeStateArray, code) {
+    var course = courseArray[code];
+    if (!course) return false;
+    var prereq = course.Prerequisite;
+
+    // IMPORTANT: if no prereqs, always ready (root courses)
+    if (!prereq || prereq.length === 0) return true;
+
+    for (var i = 0; i < prereq.length; i++) {
+      var req = prereq[i];
+      if (Array.isArray(req)) {
+        var anyDone = false;
+        for (var j = 0; j < req.length; j++) {
+          var cid = req[j];
+          if (nodeStateArray[cid] === COMPLETED_STATE) {
+            anyDone = true;
+            break;
+          }
+        }
+        if (!anyDone) return false;
+      } else {
+        if (nodeStateArray[req] !== COMPLETED_STATE) return false;
+      }
+    }
+    return true;
+  }
+
+  // Sync all remaining course buttons in the DOM (#courseButtons) to ready/inactive
+  $.syncRemainingCardsUI = function (courseArray, nodeStateArray) {
+    var container = document.getElementById("courseButtons");
+    if (!container) return;
+
+    var cards = container.querySelectorAll("[data-course]");
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var code = card.getAttribute("data-course");
+      if (!code) continue;
+
+      // determine readiness
+      var ready = isCourseReadyLocal(courseArray, nodeStateArray, code);
+
+      if (ready) {
+        // mark ready
+        card.classList.remove("inactiveState");
+        if (!card.classList.contains("readyState"))
+          card.classList.add("readyState");
+        // keep model in sync
+        nodeStateArray[code] = READY_STATE;
+      } else {
+        // mark unavailable
+        card.classList.remove("readyState");
+        if (!card.classList.contains("inactiveState"))
+          card.classList.add("inactiveState");
+        nodeStateArray[code] = UNAVALIABLE_STATE;
+      }
+
+      // also update particleSystem node color if present
+      if (
+        typeof particleSystem !== "undefined" &&
+        particleSystem.getNode &&
+        particleSystem.getNode(code)
+      ) {
+        var n = particleSystem.getNode(code);
+        n.data.color =
+          nodeStateArray[code] === READY_STATE
+            ? READY_STATE_COLOR
+            : UNAVALIABLE_STATE_COLOR;
+      }
+    }
+  };
+
+  // Backwards-compatible function that updates states for all courses (keeps model & UI consistent)
+  $.updateRemainingCourseStates = function (courseArray, nodeStateArray) {
+    if (!courseArray) return;
+    // first sync the DOM remaining cards (primary)
+    $.syncRemainingCardsUI(courseArray, nodeStateArray);
+    // then ensure any non-present courses (not in #courseButtons) have model states set
+    for (var courseCode in courseArray) {
+      if (!courseArray.hasOwnProperty(courseCode)) continue;
+      if (nodeStateArray[courseCode] === COMPLETED_STATE) continue;
+      // if course not present in remaining DOM, still compute and update model/color
+      var present = document.querySelector(
+        '#courseButtons [data-course="' + courseCode + '"]'
+      );
+      if (present) continue;
+      var ready = isCourseReadyLocal(courseArray, nodeStateArray, courseCode);
+      nodeStateArray[courseCode] = ready ? READY_STATE : UNAVALIABLE_STATE;
+      if (
+        typeof particleSystem !== "undefined" &&
+        particleSystem.getNode &&
+        particleSystem.getNode(courseCode)
+      ) {
+        particleSystem.getNode(courseCode).data.color = ready
+          ? READY_STATE_COLOR
+          : UNAVALIABLE_STATE_COLOR;
+      }
+    }
+  };
+})(jQuery);
